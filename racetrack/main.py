@@ -61,7 +61,7 @@ def run_episode(start, grid, actions, policy):
 			print('FINISH')
 			break
 
-		timeline.append({'state': state, 'action': action, 'reward': reward})
+		timeline.append({'state': np.array(state), 'action': action, 'reward': reward})
 
 		# uncomment to see trackmovement
 		# print_grid(state, actions[action], grid, policy)
@@ -110,7 +110,8 @@ for epoch in range(epochs):
 		for i, step in enumerate(reversed(timeline)):
 			value = 1 * value + step['reward']
 
-			if step not in timeline[:len(timeline) - i - 1]:
+			found = list(filter(lambda s: (s['state'] == step['state']).all(), timeline[:len(timeline) - i - 1]))
+			if len(found) == 0:
 				if returns[step['state'][0], step['state'][1], step['action']] == 0:
 					returns[step['state'][0], step['state'][1], step['action']] = [value]
 				else:
