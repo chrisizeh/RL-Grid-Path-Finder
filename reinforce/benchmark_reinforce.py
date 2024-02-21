@@ -1,5 +1,4 @@
 import reinforce_algorithm
-import reinforce_with_baseline
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -25,7 +24,7 @@ for alpha in alphas:
 			for run in range(runs):
 
 				# Uncomment to benchmark reinforce algorithm with FrozenLake8x8
-				steps, theta = reinforce_algorithm.run('FrozenLake8x8-v0', alpha, gamma, theta_length, episodes, 500)
+				steps, theta = reinforce_algorithm.run('FrozenLake8x8-v1', alpha, gamma, theta_length, episodes, 500)
 
 				# Uncomment to benchmark reinforce algorithm with CartPole-v1
 				# steps, theta, weigths = reinforce_with_baseline.run('FrozenLake8x8-v0', alpha, alpha, gamma, theta_length, theta_length, episodes, 500)
