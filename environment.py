@@ -144,7 +144,7 @@ class Environment:
 
 
 if __name__ == "__main__":
-	env = Environment('./racetrack/grid_simple.txt')
+	env = Environment('./grids/grid_simple.txt')
 	print(env.grid)
 	pos, reward, terminated, truncated, info = env.step(2)
 	print(pos, reward, terminated, truncated, info)
