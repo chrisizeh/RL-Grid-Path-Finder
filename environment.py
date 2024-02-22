@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 
 import random
+from math import ceil
 
 class Environment:
 
@@ -57,8 +58,8 @@ class Environment:
 			truncated = True 
 
 		speedChange = self.actions[action]
-		self.speed[0] = max(0, min(3, self.speed[0] + speedChange[0]))
-		self.speed[1] = max(0, min(3, self.speed[1] + speedChange[1]))
+		self.speed[0] = max(0, min(2, self.speed[0] + speedChange[0]))
+		self.speed[1] = max(0, min(2, self.speed[1] + speedChange[1]))
 
 		if(self.speed[0] == 0 and self.speed[1] == 0):
 			self.speed[random.choice([0, 1])] = 1
@@ -66,8 +67,9 @@ class Environment:
 		if (not self.move_one_step()):
 			self.history.append(self.pos.copy())
 			self.reset_pos()
-
-		# print(self.grid[self.pos[0] - self.speed[0]:self.pos[0] + 1, self.pos[1]:self.pos[1] + self.speed[1] + 1])
+		elif (self.pos == self.end):
+			terminated = True
+			reward = 0
 
 		return self.pos, reward, terminated, truncated, self.speed
 
@@ -93,11 +95,11 @@ class Environment:
 	def print(self) -> None:
 		print(self.history)
 		print_grid = self.grid.copy()
-		print_grid[self.pos[0], self.pos[1]] = 4
 
 		for pos in self.history:
 			print_grid[pos[0], pos[1]] = 5
 
+		print_grid[self.pos[0], self.pos[1]] = 4
 		plt.figure(figsize=(self.width, self.height))
 		plt.imshow(print_grid, cmap=self.colormap, interpolation='none')
 		plt.show()
@@ -117,24 +119,24 @@ class Environment:
 	Find a path with the defined x and y speed without obstacles on the grid
 	'''
 	def move_one_step(self) -> bool:
-		new_pos = self.pos.copy()
 		y = self.speed[0]
 		x = self.speed[1]
 
 		while (x != 0 or y != 0):
-			self.history.append(new_pos.copy())
+			self.history.append(self.pos.copy())
+
+			max_speed = max(abs(y), abs(x))
+			next_x = ceil(x / max_speed)
+			next_y = ceil(y /max_speed)
 			try:
-				if (y != 0 and self.grid[new_pos[0] - np.sign(y)][new_pos[1]] != 0):
-					new_pos[0] -= np.sign(y)
-					y -= np.sign(y)
-				elif (x != 0 and self.grid[new_pos[0]][new_pos[1] + np.sign(x)] != 0):
-					new_pos[1] += np.sign(x)
-					x -= np.sign(x)
+				if (self.grid[self.pos[0] - next_y][self.pos[1] + next_x] != 0):
+					self.pos[1] += next_x
+					self.pos[0] -= next_y
+					x -= next_x
+					y -= next_y
 				else:
 					print("Reset: Hit an Obstacle")
 					return False
-				
-				self.pos = new_pos
 			except:
 				print("Reset: Hit the Border")
 				return False
@@ -145,13 +147,32 @@ class Environment:
 
 if __name__ == "__main__":
 	env = Environment('./grids/grid_simple.txt')
+	env.pos = [8, 1]
+	env.speed = [1, 2]
 	print(env.grid)
-	pos, reward, terminated, truncated, info = env.step(2)
-	print(pos, reward, terminated, truncated, info)
 	pos, reward, terminated, truncated, info = env.step(4)
 	print(pos, reward, terminated, truncated, info)
 	pos, reward, terminated, truncated, info = env.step(4)
 	print(pos, reward, terminated, truncated, info)
+	pos, reward, terminated, truncated, info = env.step(4)
+	print(pos, reward, terminated, truncated, info)
+	env.print()
+
+	env.reset()
+	env.pos = [8, 1]
+	env.speed = [2, 2]
+	pos, reward, terminated, truncated, info = env.step(4)
+	print(pos, reward, terminated, truncated, info)
+
+	pos, reward, terminated, truncated, info = env.step(6)
+	print(pos, reward, terminated, truncated, info)
+
+	pos, reward, terminated, truncated, info = env.step(3)
+	print(pos, reward, terminated, truncated, info)
+
+	pos, reward, terminated, truncated, info = env.step(4)
+	print(pos, reward, terminated, truncated, info)
+
 	pos, reward, terminated, truncated, info = env.step(4)
 	print(pos, reward, terminated, truncated, info)
 	env.print()
