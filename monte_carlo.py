@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time
 import random
-import math
+import os
 
 from IPython import display
 from itertools import count
@@ -40,7 +39,7 @@ class Agent():
 			return np.random.randint(0, self.n_actions)
 		
 	
-	def plot_durations(self, show_result=False):
+	def plot_rewards(self, show_result=False, path=None):
 		plt.figure(1)
 		durations_t = torch.tensor(self.episode_rewards, dtype=torch.float)
 		if show_result:
@@ -51,6 +50,7 @@ class Agent():
 		plt.xlabel('Episode')
 		plt.ylabel('Duration')
 		plt.plot(durations_t.numpy())
+		
 		if len(durations_t) >= 100:
 			means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
 			means = torch.cat((torch.zeros(99), means))
@@ -61,16 +61,20 @@ class Agent():
 			display.display(plt.gcf())
 			display.clear_output(wait=True)
 		else:
-			display.display(plt.gcf())
+			if(path):
+				plt.savefig(path)
+			else:
+				display.display(plt.gcf())
  
 
-	def training(self, episodes, plot_training=True, max_steps=1000):
+	def training(self, episodes, plot_training=True, max_steps=1000, path=None):
 		plt.ion()
 		self.episode_rewards = []
-		max_epsilon_step = episodes / self.epsilon_decay
+		# max_epsilon_step = episodes / self.epsilon_decay
 
 		for i_episode in range(episodes):
-			self.curr_epsilon = self.epsilon_start - (self.epsilon_start - self.epsilon_end) * (min(i_episode, max_epsilon_step) / max_epsilon_step)
+			self.curr_epsilon = self.epsilon_end
+			# self.curr_epsilon = self.epsilon_start - (self.epsilon_start - self.epsilon_end) * (min(i_episode, max_epsilon_step) / max_epsilon_step)
 
 			rewards = np.zeros(max_steps)
 			timeline = np.empty(max_steps, dtype=tuple)
@@ -119,20 +123,32 @@ class Agent():
 							self.policy[state[0]][state[1]][curr_action] = self.curr_epsilon / self.n_actions
 
 			if plot_training: 
-				self.plot_durations()
+				self.plot_rewards()
 			
 			print(f'Episode {i_episode} complete with epsilon {self.curr_epsilon}')
 
 		print('Complete')
-		self.plot_durations(show_result=True)
-		plt.ioff()
-		plt.show()
+		self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))
 
 
 if __name__ == "__main__":
-	episodes = 10000
+	path = os.path.join("plots", "Monte_Carlo")
 
-	env = Environment('./grids/grid_simple.txt', timelimit=300)    
-	agent = Agent(env, epsilon_start=0.3)
-	agent.training(episodes, plot_training=True, max_steps=303)
-	agent.env.test_start_positions(agent.get_test_action)
+	try:  
+		os.mkdir("plots")
+		os.mkdir(path)
+	except:  
+		print("Path already exists")
+
+	episodes = 10
+
+	env_text = "grid_simple"
+	env = Environment(f'./grids/{env_text}.txt', timelimit=1000)    
+	path = os.path.join(path, env_text)
+	try:  
+		os.mkdir(path)
+	except:  
+		print("Path already exists")    
+	agent = Agent(env)
+	agent.training(episodes, plot_training=True, max_steps=1001, path=path)
+	agent.env.test_start_positions(agent.get_test_action, path=path)

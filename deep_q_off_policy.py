@@ -2,12 +2,15 @@ import gymnasium as gym
 import numpy as np
 import math
 import random
+import os 
+
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import colors
 from collections import namedtuple, deque
 from itertools import count
 from IPython import display
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -93,7 +96,7 @@ class Agent():
             return torch.tensor([[random.choice(range(self.n_actions))]], device=self.device, dtype=torch.long)
 
 
-    def plot_durations(self, show_result=False):
+    def plot_rewards(self, show_result=False, path=None):
         plt.figure(1)
         durations_t = torch.tensor(self.episode_rewards, dtype=torch.float)
         if show_result:
@@ -114,7 +117,11 @@ class Agent():
             display.display(plt.gcf())
             display.clear_output(wait=True)
         else:
-            display.display(plt.gcf())
+            if(path):
+                plt.savefig(path)
+            else:
+                display.display(plt.gcf())
+
 
 
     def optimize_model(self) -> None:
@@ -147,7 +154,7 @@ class Agent():
         self.optimizer.step()
 
 
-    def training(self, episodes, plot_training=True, max_steps = 1000):
+    def training(self, episodes, plot_training=True, max_steps = 1000, path=None):
         plt.ion()
         self.episode_rewards = []
         # max_epsilon_step = episodes / self.epsilon_decay
@@ -186,31 +193,15 @@ class Agent():
                     self.episode_rewards.append(np.sum(rewards))
 
                     if plot_training: 
-                        self.plot_durations()
+                        self.plot_rewards()
                     break
             
             print(f'Episode {i_episode} complete with epsilon {self.curr_epsilon}')
 
         print('Complete')
-        self.plot_durations(show_result=True)
+        self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))
         plt.ioff()
         plt.show()
-
-
-    def test(self):
-        for startIndex in range(len(self.env.start_line)):
-            state, _ = self.env.reset(startIndex=startIndex)
-            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-
-            done = False
-            while not done:
-                with torch.no_grad():
-                    action = self.target_net(state).max(1).indices.view(1, 1)
-                observation, reward, terminated, truncated, _ = self.env.step(action)
-                state = torch.tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
-                done = terminated or truncated
-
-            self.env.print()
 
 
     def get_test_action(self, state):
@@ -220,9 +211,24 @@ class Agent():
 
 
 if __name__ == "__main__":
-    episodes = 10000
+    path = os.path.join("plots", "deepQ")
 
-    env = Environment('./grids/grid_simple.txt', timelimit=1000)    
+    try:  
+        os.mkdir("plots")
+        os.mkdir(path)
+    except:  
+        print("Path already exists")
+
+    episodes = 10
+
+    env_text = "grid_simple"
+    env = Environment(f'./grids/{env_text}.txt', timelimit=1000)    
+    path = os.path.join(path, env_text)
+    try:  
+        os.mkdir(path)
+    except:  
+        print("Path already exists")
+
     agent = Agent(env, 128, learning_rate=0.001, batch_size=24)
-    agent.training(episodes, plot_training=True, max_steps=1001)
-    agent.env.test_start_positions(agent.get_test_action)
+    agent.training(episodes, plot_training=True, max_steps=1001, path=path)
+    agent.env.test_start_positions(agent.get_test_action, path=path)

@@ -4,6 +4,7 @@ from matplotlib import colors
 
 import random
 from math import ceil
+import os
 
 class Environment:
 
@@ -96,7 +97,7 @@ class Environment:
 	'''
 	Print the grid with the path until this timestep
 	'''
-	def print(self) -> None:
+	def print(self, path=None) -> None:
 		print_grid = self.grid.copy()
 
 		for pos in self.history:
@@ -105,9 +106,11 @@ class Environment:
 		print_grid[self.pos[0], self.pos[1]] = 4
 		plt.figure(figsize=(self.width, self.height))
 		plt.imshow(print_grid, cmap=self.colormap, interpolation='none')
-		plt.show()
-		return
-	
+
+		if(path):
+			plt.savefig(path)
+		else:
+			plt.show()	
 
 	'''
 	Reset position to random choice on starting line and speed to zero
@@ -149,7 +152,7 @@ class Environment:
 		return True
 	
 
-	def test_start_positions(self, get_action):
+	def test_start_positions(self, get_action, path=None):
 		for startIndex in range(len(self.start_line[0])):
 			state, _ = self.reset(startIndex=startIndex)
 
@@ -159,7 +162,7 @@ class Environment:
 				observation, reward, terminated, truncated, _ = self.step(action)
 				done = terminated or truncated
 
-			self.print()
+			self.print(os.path.join(path, f"start_position_{startIndex}.png"))
 		
 
 
