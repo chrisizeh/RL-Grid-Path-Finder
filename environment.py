@@ -16,7 +16,10 @@ class Environment:
 
 	Position: (y, x) for direct matrix checking
 	'''
-	def __init__(self, gridPath, timelimit= -1) -> None:
+	def __init__(self, gridPath, timelimit= -1, startIndex=None) -> None:
+		self.n_actions = 9
+		self.n_states = 2
+
 		self.timelimit = timelimit
 		self.grid = np.loadtxt(gridPath)
 		self.start_line = np.where(self.grid == 2)
@@ -33,8 +36,7 @@ class Environment:
 
 		self.actions = np.array([[1, -1], [1, 0], [1, 1], [0, -1], [0, 0], [0, 1], [-1, -1], [-1, 0], [-1, 1]], dtype=np.int64)
 		self.time = 0
-		self.reset_pos()
-
+		self.reset_pos(startIndex)
 
 	'''
 	Actions numbered by Matrix for Speed Changes:
@@ -82,8 +84,8 @@ class Environment:
 	observation: Current position as state
 	info: absolute speeds for x and y axis
 	'''
-	def reset(self) -> tuple[list[float], list[int]]:
-		self.reset_pos()
+	def reset(self, startIndex=None) -> tuple[list[float], list[int]]:
+		self.reset_pos(startIndex)
 		self.history = []
 		self.time = 0
 
@@ -94,7 +96,6 @@ class Environment:
 	Print the grid with the path until this timestep
 	'''
 	def print(self) -> None:
-		print(self.history)
 		print_grid = self.grid.copy()
 
 		for pos in self.history:
@@ -110,8 +111,12 @@ class Environment:
 	'''
 	Reset position to random choice on starting line and speed to zero
 	'''
-	def reset_pos(self) -> None:
-		index = random.choice(range(len(self.start_line[0])))
+	def reset_pos(self, startIndex=None) -> None:
+		if startIndex:
+			index = startIndex
+		else:
+			index = random.choice(range(len(self.start_line[0])))
+
 		self.pos = np.array([self.start_line[0][index], self.start_line[1][index]])
 		self.speed = np.zeros(2, dtype=np.int64)
 
@@ -143,6 +148,19 @@ class Environment:
 				return False
 				
 		return True
+	
+
+	def test_start_positions(self, get_action):
+		for startIndex in range(len(self.start_line[0])):
+			state, _ = self.reset(startIndex=startIndex)
+
+			done = False
+			while not done:
+				action = get_action(state)
+				observation, reward, terminated, truncated, _ = self.step(action)
+				done = terminated or truncated
+
+			self.print()
 		
 
 
