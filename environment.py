@@ -53,6 +53,7 @@ class Environment:
 		truncated = False
 		terminated = False
 		reward = -1
+		self.time += 1
 
 		if(self.timelimit != -1 and self.time > self.timelimit):
 			truncated = True 
@@ -67,7 +68,7 @@ class Environment:
 		if (not self.move_one_step()):
 			self.history.append(self.pos.copy())
 			self.reset_pos()
-		elif (self.pos == self.end):
+		elif (np.array_equal(self.pos, self.end)):
 			terminated = True
 			reward = 0
 
