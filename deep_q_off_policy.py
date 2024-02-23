@@ -61,7 +61,7 @@ class DQN(nn.Module):
 
 class Agent():
 
-    def __init__(self, env, nodes, batch_size=128, gamma=0.7, epsilon_start=0.9, epsilon_end=0.05, epsilon_decay=1000, update_rate=0.005, learning_rate=1e-3) -> None:
+    def __init__(self, env, nodes, batch_size=128, gamma=0.7, epsilon_start=0.9, epsilon_end=0.05, epsilon_decay=2, update_rate=0.005, learning_rate=1e-3) -> None:
         self.env = env
         self.n_actions = env.n_actions
         self.n_observations = env.n_states
@@ -86,10 +86,7 @@ class Agent():
 
     def select_action(self, state):
         sample = random.random()
-        eps_threshold = self.epsilon_start + (self.epsilon_start - self.epsilon_end) * \
-            math.exp(-1. * self.steps / self.epsilon_decay)
-        self.steps += 1
-        if sample > eps_threshold:
+        if sample > self.curr_epsilon:
             with torch.no_grad():
                 return self.policy_net(state).max(1).indices.view(1, 1)
         else:
@@ -150,16 +147,22 @@ class Agent():
         self.optimizer.step()
 
 
-    def training(self, episodes, plot_training=True):
+    def training(self, episodes, plot_training=True, max_steps = 1000):
         plt.ion()
         self.episode_rewards = []
+        # max_epsilon_step = episodes / self.epsilon_decay
 
         for i_episode in range(episodes):
+            self.curr_epsilon = self.epsilon_end
+            # self.curr_epsilon = self.epsilon_start - (self.epsilon_start - self.epsilon_end) * (min(i_episode, max_epsilon_step) / max_epsilon_step)
+
+            rewards = np.zeros(max_steps)
             state, _ = self.env.reset()
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
             for t in count():
                 action = self.select_action(state)
                 observation, reward, terminated, truncated, _ = self.env.step(action)
+                rewards[t] = reward
                 reward = torch.tensor([reward], device=self.device)
                 done = terminated or truncated
 
@@ -180,14 +183,13 @@ class Agent():
                 self.target_net.load_state_dict(target_net_state_dict)
 
                 if done:
-                    print('DONE')
-                    self.episode_rewards.append(t + 1)
+                    self.episode_rewards.append(np.sum(rewards))
 
                     if plot_training: 
                         self.plot_durations()
                     break
             
-            print(f'Episode {i_episode} complete')
+            print(f'Episode {i_episode} complete with epsilon {self.curr_epsilon}')
 
         print('Complete')
         self.plot_durations(show_result=True)
@@ -218,9 +220,9 @@ class Agent():
 
 
 if __name__ == "__main__":
-    episodes = 30
+    episodes = 10000
 
-    env = Environment('./grids/grid_simple.txt', timelimit=300)    
-    agent = Agent(env, 64, learning_rate=0.01, batch_size=24)
-    agent.training(episodes, plot_training=True)
+    env = Environment('./grids/grid_simple.txt', timelimit=1000)    
+    agent = Agent(env, 128, learning_rate=0.001, batch_size=24)
+    agent.training(episodes, plot_training=True, max_steps=1001)
     agent.env.test_start_positions(agent.get_test_action)
