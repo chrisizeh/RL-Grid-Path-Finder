@@ -140,15 +140,16 @@ if __name__ == "__main__":
 	except:  
 		print("Path already exists")
 
-	episodes = 10
+	episodes = 1000
+	timelimit = 10000
 
-	env_text = "grid_simple"
-	env = Environment(f'./grids/{env_text}.txt', timelimit=1000)    
+	env_text = "grid_maze"
+	env = Environment(f'./grids/{env_text}.txt', timelimit=timelimit)    
 	path = os.path.join(path, env_text)
 	try:  
 		os.mkdir(path)
 	except:  
 		print("Path already exists")    
 	agent = Agent(env)
-	agent.training(episodes, plot_training=True, max_steps=1001, path=path)
+	agent.training(episodes, plot_training=True, max_steps=timelimit + 1, path=path)
 	agent.env.test_start_positions(agent.get_test_action, path=path)
