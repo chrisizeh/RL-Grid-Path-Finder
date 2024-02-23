@@ -59,6 +59,7 @@ class Environment:
 
 		if(self.timelimit != -1 and self.time > self.timelimit):
 			truncated = True 
+			reward = -1000
 
 		speedChange = self.actions[action]
 		self.speed[0] = max(0, min(2, self.speed[0] + speedChange[0]))
@@ -141,10 +142,8 @@ class Environment:
 					x -= next_x
 					y -= next_y
 				else:
-					print("Reset: Hit an Obstacle")
 					return False
 			except:
-				print("Reset: Hit the Border")
 				return False
 				
 		return True
