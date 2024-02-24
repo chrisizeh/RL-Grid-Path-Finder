@@ -166,8 +166,9 @@ class Agent():
             # self.curr_epsilon = self.epsilon_start - (self.epsilon_start - self.epsilon_end) * (min(i_episode, max_epsilon_step) / max_epsilon_step)
 
             rewards = np.zeros(max_steps)
-            state, _ = self.env.reset()
+            state, _ = self.env.reset(i_episode % self.env.n_starts)
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
+            
             for t in count():
                 action = self.select_action(state)
                 observation, reward, terminated, truncated, _ = self.env.step(action)
