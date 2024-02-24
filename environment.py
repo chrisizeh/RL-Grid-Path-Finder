@@ -107,6 +107,7 @@ class Environment:
 
 		if(path):
 			plt.savefig(path)
+			plt.clf()
 		else:
 			plt.show()	
 

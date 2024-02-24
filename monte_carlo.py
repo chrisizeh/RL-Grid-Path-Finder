@@ -121,6 +121,9 @@ class Agent():
 
 			if plot_training: 
 				self.plot_rewards()
+
+				if (i_episode > episodes - 20):
+					self.env.print(os.path.join(path, f"episode_{i_episode}.png"))
 			
 			print(f'Episode {i_episode} complete after {t} steps')
 
@@ -151,6 +154,6 @@ if __name__ == "__main__":
 	except:  
 		print("Path already exists")    
 	agent = Agent(env, max_steps=timelimit + 1)
-	agent.training(episodes, plot_training=False, path=path)
+	agent.training(episodes, plot_training=True, path=path)
 	agent.env.test_start_positions(agent.get_test_action, path=path)
 	plt.close()
