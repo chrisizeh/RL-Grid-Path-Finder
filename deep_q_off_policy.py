@@ -153,10 +153,13 @@ class Agent():
         self.optimizer.step()
 
 
-    def training(self, episodes, plot_training=True, max_steps = 1000, path=None):
+    def run(self, episodes, plot=True, max_steps = 1000, path=None, training=True):
         plt.ion()
         self.episode_rewards = []
         # max_epsilon_step = episodes / self.epsilon_decay
+
+        if (not training):
+            self.epsilon = 0
 
         for i_episode in range(episodes):
             self.curr_epsilon = self.epsilon_end
@@ -179,34 +182,32 @@ class Agent():
 
                 self.memory.push(state, action, next_state, reward)
 
-                state = next_state
-                self.optimize_model()
+                if (training):
+                    state = next_state
+                    self.optimize_model()
 
-                target_net_state_dict = self.target_net.state_dict()
-                policy_net_state_dict = self.policy_net.state_dict()
-                for key in policy_net_state_dict:
-                    target_net_state_dict[key] = policy_net_state_dict[key] * self.update_rate + target_net_state_dict[key] * (1 - self.update_rate)
-                self.target_net.load_state_dict(target_net_state_dict)
+                    target_net_state_dict = self.target_net.state_dict()
+                    policy_net_state_dict = self.policy_net.state_dict()
+                    for key in policy_net_state_dict:
+                        target_net_state_dict[key] = policy_net_state_dict[key] * self.update_rate + target_net_state_dict[key] * (1 - self.update_rate)
+                    self.target_net.load_state_dict(target_net_state_dict)
 
                 if done:
                     self.episode_rewards.append(np.sum(rewards))
 
-                    if plot_training: 
-                        self.plot_rewards()
+                    if plot: 
+                        if (training):
+                            self.plot_rewards()
+                        else:
+                            self.env.print(os.path.join(path, f"episode_{i_episode}.png"))
                     break
             
             print(f'Episode {i_episode} complete after {t} steps')
 
         print('Complete')
-        self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))
+        if (training):
+            self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))
         plt.ioff()
-        plt.show()
-
-
-    def get_test_action(self, state):
-        state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-        with torch.no_grad():
-            return self.target_net(state).max(1).indices.view(1, 1)
 
 
 if __name__ == "__main__":
@@ -221,7 +222,7 @@ if __name__ == "__main__":
     except:  
         print("Path already exists")
 
-    episodes = 50
+    episodes = 500
     timelimit = 1000
 
     env_text = "grid_simple"
@@ -233,5 +234,5 @@ if __name__ == "__main__":
         print("Path already exists")
 
     agent = Agent(env, 12, learning_rate=0.001, batch_size=24)
-    agent.training(episodes, plot_training=True, max_steps=timelimit + 1, path=path)
-    agent.env.test_start_positions(agent.get_test_action, path=path)
+    agent.run(episodes, plot=True, max_steps=timelimit + 1, path=path)
+    agent.run(episodes, plot=True, max_steps=timelimit + 1, path=path, training=False)

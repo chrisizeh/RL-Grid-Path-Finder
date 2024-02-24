@@ -24,6 +24,7 @@ class Environment:
 		self.timelimit = timelimit
 		self.grid = np.loadtxt(gridPath)
 		self.start_line = np.where(self.grid == 2)
+		self.n_starts = len(self.start_line[0])
 		self.height, self.width = self.grid.shape
 
 		end_points = np.where(self.grid == 3)
@@ -107,7 +108,7 @@ class Environment:
 
 		if(path):
 			plt.savefig(path)
-			plt.clf()
+			plt.close()
 		else:
 			plt.show()	
 
@@ -154,22 +155,6 @@ class Environment:
 				
 		return True
 	
-
-	def test_start_positions(self, get_action, path=None):
-		for startIndex in range(len(self.start_line[0])):
-			state, _ = self.reset(startIndex=startIndex)
-
-			done = False
-			while not done:
-				action = get_action(state)
-				observation, reward, terminated, truncated, _ = self.step(action)
-				done = terminated or truncated
-
-			print(f"Start Point {startIndex} took {self.time} steps")
-			self.print(os.path.join(path, f"start_position_{startIndex}.png"))
-		
-
-
 if __name__ == "__main__":
 	env = Environment('./grids/grid_simple.txt')
 	env.reset(1)

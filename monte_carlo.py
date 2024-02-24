@@ -26,13 +26,6 @@ class Agent():
 
 		self.steps = 0
 
-	
-	def get_test_action(self, state):
-		max_value = np.max(self.policy[state[0]][state[1]][state[2]][state[3]])
-		best_actions = np.where(self.policy[state[0]][state[1]][state[2]][state[3]] == max_value)[0]
-		best_action = np.random.choice(best_actions)
-		return best_action
-
 
 	def select_action(self, state):
 		sample = random.random()
@@ -74,14 +67,17 @@ class Agent():
 				display.display(plt.gcf())
  
 
-	def training(self, episodes, plot_training=True, path=None):
+	def run(self, episodes, plot=True, path=None, training=True):
 		plt.ion()
 		self.episode_rewards = []
+
+		if (not training):
+				self.epsilon = 0
 
 		for i_episode in range(episodes):
 			rewards = np.zeros(self.max_steps)
 			timeline = np.empty(self.max_steps, dtype=tuple)
-			state, _ = self.env.reset()
+			state, _ = self.env.reset(i_episode % self.env.n_starts)
 
 			for t in count():
 				action = self.select_action(state)
@@ -96,39 +92,43 @@ class Agent():
 					rewards = rewards[:t]
 					break
 
-			value = 0
-			for i, step_info in enumerate(reversed(timeline)):
-				reward = rewards[i]
-				state = step_info[0]
-				action = step_info[1]
+			if (training):
+				value = 0
+				for i, step_info in enumerate(reversed(timeline)):
+					reward = rewards[i]
+					state = step_info[0]
+					action = step_info[1]
 
-				value = self.gamma * value + reward
+					value = self.gamma * value + reward
 
-				found = list(filter(lambda s: np.array_equal(step_info, s), timeline[:len(timeline) - i - 1]))
-				if len(found) == 0:
-					self.times_counted[state[0]][state[1]][state[2]][state[3]][action] += 1
-					self.q[state[0]][state[1]][state[2]][state[3]][action] += (value - self.q[state[0]][state[1]][state[2]][state[3]][action]) / self.times_counted[state[0]][state[1]][state[2]][state[3]][action]
+					found = list(filter(lambda s: np.array_equal(step_info, s), timeline[:len(timeline) - i - 1]))
+					if len(found) == 0:
+						self.times_counted[state[0]][state[1]][state[2]][state[3]][action] += 1
+						self.q[state[0]][state[1]][state[2]][state[3]][action] += (value - self.q[state[0]][state[1]][state[2]][state[3]][action]) / self.times_counted[state[0]][state[1]][state[2]][state[3]][action]
 
-					max_q = np.max(self.q[state[0]][state[1]][state[2]][state[3]])
-					best_actions = np.where(self.q[state[0]][state[1]][state[2]][state[3]] == max_q)[0]
-					best_action = np.random.choice(best_actions)
-				
-					for curr_action in range(self.n_actions):
-						if curr_action == best_action:
-							self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = 1 - self.epsilon + self.epsilon / self.n_actions
-						else:
-							self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = self.epsilon / self.n_actions
+						max_q = np.max(self.q[state[0]][state[1]][state[2]][state[3]])
+						best_actions = np.where(self.q[state[0]][state[1]][state[2]][state[3]] == max_q)[0]
+						best_action = np.random.choice(best_actions)
+					
+						for curr_action in range(self.n_actions):
+							if curr_action == best_action:
+								self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = 1 - self.epsilon + self.epsilon / self.n_actions
+							else:
+								self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = self.epsilon / self.n_actions
 
-			if plot_training: 
-				self.plot_rewards()
-
-				if (i_episode > episodes - 20):
-					self.env.print(os.path.join(path, f"episode_{i_episode}.png"))
+				if plot: 
+					self.plot_rewards()
 			
+			else:
+				if plot: 
+					self.env.print(os.path.join(path, f"episode_{i_episode}.png"))
+
 			print(f'Episode {i_episode} complete after {t} steps')
 
 		print('Complete')
-		self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))
+		if (training):
+			self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))
+		plt.ioff()
 
 
 if __name__ == "__main__":
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 	except:  
 		print("Path already exists")
 
-	episodes = 100
+	episodes = 1000
 	timelimit = 2000
 
 	env_text = "grid_simple"
@@ -154,6 +154,6 @@ if __name__ == "__main__":
 	except:  
 		print("Path already exists")    
 	agent = Agent(env, max_steps=timelimit + 1)
-	agent.training(episodes, plot_training=True, path=path)
-	agent.env.test_start_positions(agent.get_test_action, path=path)
+	agent.run(episodes, plot=True, path=path)
+	agent.run(10, plot=True, path=path, training=False)
 	plt.close()
