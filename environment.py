@@ -31,7 +31,7 @@ class Environment:
 			raise "At least one endpoint must be provided"
 
 		self.history = []
-		self.colormap = colors.ListedColormap(["black", "white", "blue", "green", "red", "orange"])
+		self.colormap = colors.ListedColormap(["black", "white", "blue", "green", "turquoise", "red", "orange"])
 
 		self.actions = np.array([[1, -1], [1, 0], [1, 1], [0, -1], [0, 0], [0, 1], [-1, -1], [-1, 0], [-1, 1]], dtype=np.int64)
 		self.time = 0
@@ -68,7 +68,6 @@ class Environment:
 			self.speed[random.choice([0, 1])] = 1
 	
 		if (not self.move_one_step()):
-			self.history.append(self.pos.copy())
 			self.reset_pos()
 		elif (self.grid[self.pos[0]][self.pos[1]] == 3):
 			terminated = True
@@ -98,10 +97,11 @@ class Environment:
 	def print(self, path=None) -> None:
 		print_grid = self.grid.copy()
 
-		for pos in self.history:
-			print_grid[pos[0], pos[1]] = 5
+		for pos in range(1, len(self.history)):
+			print_grid[self.history[pos][0], self.history[pos][1]] = 6
 
-		print_grid[self.pos[0], self.pos[1]] = 4
+		print_grid[self.pos[0], self.pos[1]] = 5
+		print_grid[self.history[0][0], self.history[0][1]] = 4
 		plt.figure(figsize=(self.width, self.height))
 		plt.imshow(print_grid, cmap=self.colormap, interpolation='none')
 
@@ -121,6 +121,7 @@ class Environment:
 
 		self.pos = np.array([self.start_line[0][index], self.start_line[1][index]])
 		self.speed = np.zeros(2, dtype=np.int64)
+		self.history.append(self.pos.copy())
 
 
 	'''
@@ -170,7 +171,7 @@ class Environment:
 
 if __name__ == "__main__":
 	env = Environment('./grids/grid_simple.txt')
-	env.pos = [8, 1]
+	env.reset(1)
 	env.speed = [1, 2]
 	print(env.grid)
 	pos, reward, terminated, truncated, info = env.step(4)
@@ -181,8 +182,7 @@ if __name__ == "__main__":
 	print(pos, reward, terminated, truncated, info)
 	env.print()
 
-	env.reset()
-	env.pos = [8, 1]
+	env.reset(1)
 	env.speed = [2, 2]
 	pos, reward, terminated, truncated, info = env.step(4)
 	print(pos, reward, terminated, truncated, info)
