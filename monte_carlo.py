@@ -136,6 +136,9 @@ if __name__ == "__main__":
 
 	try:  
 		os.mkdir("plots")
+	except:  
+		print("Path already exists")
+	try:  
 		os.mkdir(path)
 	except:  
 		print("Path already exists")
