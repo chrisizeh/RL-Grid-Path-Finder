@@ -27,10 +27,8 @@ class Environment:
 		self.height, self.width = self.grid.shape
 
 		end_points = np.where(self.grid == 3)
-		if(len(end_points[0]) == 1):
-			self.end = [end_points[0][0], end_points[1][0]]
-		else:
-			raise "Extacly one endpoint must be provided"
+		if(len(end_points[0]) < 1):
+			raise "At least one endpoint must be provided"
 
 		self.history = []
 		self.colormap = colors.ListedColormap(["black", "white", "blue", "green", "red", "orange"])
@@ -62,8 +60,9 @@ class Environment:
 			truncated = True 
 
 		speedChange = self.actions[action]
-		self.speed[0] = max(0, min(2, self.speed[0] + speedChange[0]))
-		self.speed[1] = max(0, min(2, self.speed[1] + speedChange[1]))
+
+		self.speed[0] = max(-2, min(2, self.speed[0] + speedChange[0]))
+		self.speed[1] = max(-2, min(2, self.speed[1] + speedChange[1]))
 
 		if(self.speed[0] == 0 and self.speed[1] == 0):
 			self.speed[random.choice([0, 1])] = 1
@@ -71,7 +70,7 @@ class Environment:
 		if (not self.move_one_step()):
 			self.history.append(self.pos.copy())
 			self.reset_pos()
-		elif (np.array_equal(self.pos, self.end)):
+		elif (self.grid[self.pos[0]][self.pos[1]] == 3):
 			terminated = True
 			reward = 0
 
@@ -138,11 +137,14 @@ class Environment:
 			next_x = ceil(x / max_speed)
 			next_y = ceil(y /max_speed)
 			try:
-				if (self.grid[self.pos[0] - next_y][self.pos[1] + next_x] != 0):
+				if (self.pos[0] - next_y > 0 and self.pos[1] + next_x > 0 and self.grid[self.pos[0] - next_y][self.pos[1] + next_x] != 0):
 					self.pos[1] += next_x
 					self.pos[0] -= next_y
 					x -= next_x
 					y -= next_y
+
+					if(self.grid[self.pos[0]][self.pos[1]] == 3):
+						return True
 				else:
 					return False
 			except:

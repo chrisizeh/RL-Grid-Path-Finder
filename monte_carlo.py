@@ -11,17 +11,18 @@ from environment import Environment
 
 class Agent():
 
-	def __init__(self, env, epsilon_start=0.5, epsilon_end=0.05, epsilon_decay=2, gamma=0.7) -> None:
+	def __init__(self, env, epsilon=0.05, gamma=0.99, max_steps=1000) -> None:
 		self.env = env
 		self.n_actions = env.n_actions
 		self.n_observations = env.n_states
 
-		self.epsilon_start = epsilon_start
-		self.epsilon_end = epsilon_end
-		self.epsilon_decay = epsilon_decay
+		self.epsilon = epsilon
 		self.gamma = gamma
+		self.max_steps = max_steps
 		
 		self.policy = np.full((self.env.height, self.env.width, 3, 3, self.n_actions), 1 / self.n_actions)
+		self.times_counted = np.zeros((self.env.height, self.env.width, 3, 3, self.n_actions))
+		self.q = np.full((self.env.height, self.env.width, 3, 3, self.n_actions), -self.max_steps, dtype=np.float32)
 
 		self.steps = 0
 
@@ -33,8 +34,11 @@ class Agent():
 	def select_action(self, state):
 		sample = random.random()
 		
-		if sample > self.curr_epsilon:
-			return np.argmax(self.policy[state[0]][state[1]][state[2]][state[3]])
+		if sample > self.epsilon:
+			max_q = np.max(self.policy[state[0]][state[1]][state[2]][state[3]])
+			best_actions = np.where(self.policy[state[0]][state[1]][state[2]][state[3]] == max_q)[0]
+			best_action = np.random.choice(best_actions)
+			return best_action
 		else:
 			return np.random.randint(0, self.n_actions)
 		
@@ -67,17 +71,13 @@ class Agent():
 				display.display(plt.gcf())
  
 
-	def training(self, episodes, plot_training=True, max_steps=1000, path=None):
+	def training(self, episodes, plot_training=True, path=None):
 		plt.ion()
 		self.episode_rewards = []
-		# max_epsilon_step = episodes / self.epsilon_decay
 
 		for i_episode in range(episodes):
-			self.curr_epsilon = self.epsilon_end
-			# self.curr_epsilon = self.epsilon_start - (self.epsilon_start - self.epsilon_end) * (min(i_episode, max_epsilon_step) / max_epsilon_step)
-
-			rewards = np.zeros(max_steps)
-			timeline = np.empty(max_steps, dtype=tuple)
+			rewards = np.zeros(self.max_steps)
+			timeline = np.empty(self.max_steps, dtype=tuple)
 			state, _ = self.env.reset()
 
 			for t in count():
@@ -87,16 +87,13 @@ class Agent():
 				rewards[t] = reward
 
 				done = terminated or truncated
-				if done or t > max_steps:
+				if done or t > self.max_steps:
 					self.episode_rewards.append(np.sum(rewards))
 					timeline = timeline[:t]
 					rewards = rewards[:t]
 					break
 
-			q = np.zeros(shape=(self.env.height, self.env.width, 3, 3, self.n_actions))
-			returns = np.zeros(shape=(self.env.height, self.env.width, 3, 3, self.n_actions, 1))
 			value = 0
-
 			for i, step_info in enumerate(reversed(timeline)):
 				reward = rewards[i]
 				state = step_info[0]
@@ -106,26 +103,23 @@ class Agent():
 
 				found = list(filter(lambda s: np.array_equal(step_info, s), timeline[:len(timeline) - i - 1]))
 				if len(found) == 0:
-					if returns[state[0]][state[1]][state[2]][state[3]][action] == 0:
-						returns[state[0]][state[1]][state[2]][state[3]][action] = value
-					else:
-						np.append(returns[state[0]][state[1]][state[2]][state[3]][action], [value])
-					q[state[0]][state[1]][state[2]][state[3]][action] = np.mean(returns[state[0]][state[1]][state[2]][state[3]][action])
+					self.times_counted[state[0]][state[1]][state[2]][state[3]][action] += 1
+					self.q[state[0]][state[1]][state[2]][state[3]][action] += (value - self.q[state[0]][state[1]][state[2]][state[3]][action]) / self.times_counted[state[0]][state[1]][state[2]][state[3]][action]
 
-					max_q = np.max(q[state[0]][state[1]][state[2]][state[3]])
-					best_actions = np.where(q[state[0]][state[1]][state[2]][state[3]] == max_q)[0]
+					max_q = np.max(self.q[state[0]][state[1]][state[2]][state[3]])
+					best_actions = np.where(self.q[state[0]][state[1]][state[2]][state[3]] == max_q)[0]
 					best_action = np.random.choice(best_actions)
 				
 					for curr_action in range(self.n_actions):
 						if curr_action == best_action:
-							self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = 1 - self.curr_epsilon + self.curr_epsilon / self.n_actions
+							self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = 1 - self.epsilon + self.epsilon / self.n_actions
 						else:
-							self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = self.curr_epsilon / self.n_actions
+							self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = self.epsilon / self.n_actions
 
 			if plot_training: 
 				self.plot_rewards()
 			
-			print(f'Episode {i_episode} complete with epsilon {self.curr_epsilon}')
+			print(f'Episode {i_episode} complete after {t} steps')
 
 		print('Complete')
 		self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))
@@ -143,8 +137,8 @@ if __name__ == "__main__":
 	except:  
 		print("Path already exists")
 
-	episodes = 5000
-	timelimit = 1000
+	episodes = 100
+	timelimit = 2000
 
 	env_text = "grid_simple"
 	env = Environment(f'./grids/{env_text}.txt', timelimit=timelimit)    
@@ -153,6 +147,7 @@ if __name__ == "__main__":
 		os.mkdir(path)
 	except:  
 		print("Path already exists")    
-	agent = Agent(env)
-	agent.training(episodes, plot_training=True, max_steps=timelimit + 1, path=path)
+	agent = Agent(env, max_steps=timelimit + 1)
+	agent.training(episodes, plot_training=False, path=path)
 	agent.env.test_start_positions(agent.get_test_action, path=path)
+	plt.close()
