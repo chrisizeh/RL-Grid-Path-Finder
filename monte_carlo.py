@@ -21,20 +21,20 @@ class Agent():
 		self.epsilon_decay = epsilon_decay
 		self.gamma = gamma
 		
-		self.policy = np.full((self.env.height, self.env.width, self.n_actions), 1 / self.n_actions)
+		self.policy = np.full((self.env.height, self.env.width, 3, 3, self.n_actions), 1 / self.n_actions)
 
 		self.steps = 0
 
 	
 	def get_test_action(self, state):
-		return np.argmax(self.policy[state[0]][state[1]])
+		return np.argmax(self.policy[state[0]][state[1]][state[2]][state[3]])
 
 
 	def select_action(self, state):
 		sample = random.random()
 		
 		if sample > self.curr_epsilon:
-			return np.argmax(self.policy[state[0]][state[1]])
+			return np.argmax(self.policy[state[0]][state[1]][state[2]][state[3]])
 		else:
 			return np.random.randint(0, self.n_actions)
 		
@@ -93,8 +93,8 @@ class Agent():
 					rewards = rewards[:t]
 					break
 
-			q = np.zeros(shape=(self.env.height, self.env.width, self.n_actions))
-			returns = np.zeros(shape=(self.env.height, self.env.width, self.n_actions, 1))
+			q = np.zeros(shape=(self.env.height, self.env.width, 3, 3, self.n_actions))
+			returns = np.zeros(shape=(self.env.height, self.env.width, 3, 3, self.n_actions, 1))
 			value = 0
 
 			for i, step_info in enumerate(reversed(timeline)):
@@ -104,23 +104,23 @@ class Agent():
 
 				value = self.gamma * value + reward
 
-				found = list(filter(lambda s: ((s[0] == state).all() and s[1] == action), timeline[:len(timeline) - i - 1]))
+				found = list(filter(lambda s: np.array_equal(step_info, s), timeline[:len(timeline) - i - 1]))
 				if len(found) == 0:
-					if returns[state[0]][state[1]][action] == 0:
-						returns[state[0]][state[1]][action] = value
+					if returns[state[0]][state[1]][state[2]][state[3]][action] == 0:
+						returns[state[0]][state[1]][state[2]][state[3]][action] = value
 					else:
-						np.append(returns[state[0]][state[1]][action], [value])
-					q[state[0]][state[1]][action] = np.mean(returns[state[0]][state[1]][action])
+						np.append(returns[state[0]][state[1]][state[2]][state[3]][action], [value])
+					q[state[0]][state[1]][state[2]][state[3]][action] = np.mean(returns[state[0]][state[1]][state[2]][state[3]][action])
 
-					max_q = np.max(q[state[0]][state[1]])
-					best_actions = np.where(q[state[0]][state[1]] == max_q)[0]
+					max_q = np.max(q[state[0]][state[1]][state[2]][state[3]])
+					best_actions = np.where(q[state[0]][state[1]][state[2]][state[3]] == max_q)[0]
 					best_action = np.random.choice(best_actions)
 				
 					for curr_action in range(self.n_actions):
 						if curr_action == best_action:
-							self.policy[state[0]][state[1]][curr_action] = 1 - self.curr_epsilon + self.curr_epsilon / self.n_actions
+							self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = 1 - self.curr_epsilon + self.curr_epsilon / self.n_actions
 						else:
-							self.policy[state[0]][state[1]][curr_action] = self.curr_epsilon / self.n_actions
+							self.policy[state[0]][state[1]][state[2]][state[3]][curr_action] = self.curr_epsilon / self.n_actions
 
 			if plot_training: 
 				self.plot_rewards()
@@ -140,10 +140,10 @@ if __name__ == "__main__":
 	except:  
 		print("Path already exists")
 
-	episodes = 1000
-	timelimit = 10000
+	episodes = 5000
+	timelimit = 1000
 
-	env_text = "grid_maze"
+	env_text = "grid_simple"
 	env = Environment(f'./grids/{env_text}.txt', timelimit=timelimit)    
 	path = os.path.join(path, env_text)
 	try:  

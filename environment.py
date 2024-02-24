@@ -19,7 +19,7 @@ class Environment:
 	'''
 	def __init__(self, gridPath, timelimit= -1, startIndex=None) -> None:
 		self.n_actions = 9
-		self.n_states = 2
+		self.n_states = 4
 
 		self.timelimit = timelimit
 		self.grid = np.loadtxt(gridPath)
@@ -60,7 +60,6 @@ class Environment:
 
 		if(self.timelimit != -1 and self.time > self.timelimit):
 			truncated = True 
-			reward = -1000
 
 		speedChange = self.actions[action]
 		self.speed[0] = max(0, min(2, self.speed[0] + speedChange[0]))
@@ -76,7 +75,7 @@ class Environment:
 			terminated = True
 			reward = 0
 
-		return self.pos, reward, terminated, truncated, self.speed
+		return [*self.pos, *self.speed], reward, terminated, truncated, self.speed
 
 
 	'''
@@ -91,7 +90,7 @@ class Environment:
 		self.history = []
 		self.time = 0
 
-		return self.pos, self.speed
+		return [*self.pos, *self.speed], self.speed
 	
 
 	'''
