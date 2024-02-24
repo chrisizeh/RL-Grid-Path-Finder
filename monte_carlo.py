@@ -104,7 +104,11 @@ class Agent():
 					found = list(filter(lambda s: np.array_equal(step_info, s), timeline[:len(timeline) - i - 1]))
 					if len(found) == 0:
 						self.times_counted[state[0]][state[1]][state[2]][state[3]][action] += 1
-						self.q[state[0]][state[1]][state[2]][state[3]][action] += (value - self.q[state[0]][state[1]][state[2]][state[3]][action]) / self.times_counted[state[0]][state[1]][state[2]][state[3]][action]
+						if (self.times_counted[state[0]][state[1]][state[2]][state[3]][action] == 0):
+							self.q[state[0]][state[1]][state[2]][state[3]][action] = value
+						else: 
+							self.q[state[0]][state[1]][state[2]][state[3]][action] += (value - self.q[state[0]][state[1]][state[2]][state[3]][action]) / self.times_counted[state[0]][state[1]][state[2]][state[3]][action]
+
 
 						max_q = np.max(self.q[state[0]][state[1]][state[2]][state[3]])
 						best_actions = np.where(self.q[state[0]][state[1]][state[2]][state[3]] == max_q)[0]
