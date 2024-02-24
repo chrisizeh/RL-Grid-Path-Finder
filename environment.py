@@ -137,7 +137,7 @@ class Environment:
 			next_x = ceil(x / max_speed)
 			next_y = ceil(y /max_speed)
 			try:
-				if (self.pos[0] - next_y > 0 and self.pos[1] + next_x > 0 and self.grid[self.pos[0] - next_y][self.pos[1] + next_x] != 0):
+				if ((self.pos[0] - next_y) > 0 and (self.pos[1] + next_x) > 0 and self.grid[self.pos[0] - next_y][self.pos[1] + next_x] != 0):
 					self.pos[1] += next_x
 					self.pos[0] -= next_y
 					x -= next_x
@@ -163,6 +163,7 @@ class Environment:
 				observation, reward, terminated, truncated, _ = self.step(action)
 				done = terminated or truncated
 
+			print(f"Start Point {startIndex} took {self.time} steps")
 			self.print(os.path.join(path, f"start_position_{startIndex}.png"))
 		
 
