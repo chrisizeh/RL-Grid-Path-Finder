@@ -195,7 +195,7 @@ class Agent():
                         self.plot_rewards()
                     break
             
-            print(f'Episode {i_episode} complete with epsilon {self.curr_epsilon}')
+            print(f'Episode {i_episode} complete after {t} steps')
 
         print('Complete')
         self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))

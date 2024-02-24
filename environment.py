@@ -114,7 +114,7 @@ class Environment:
 	Reset position to random choice on starting line and speed to zero
 	'''
 	def reset_pos(self, startIndex=None) -> None:
-		if startIndex:
+		if startIndex != None:
 			index = startIndex
 		else:
 			index = random.choice(range(len(self.start_line[0])))

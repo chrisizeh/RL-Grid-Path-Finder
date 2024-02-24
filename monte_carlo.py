@@ -28,15 +28,18 @@ class Agent():
 
 	
 	def get_test_action(self, state):
-		return np.argmax(self.policy[state[0]][state[1]][state[2]][state[3]])
+		max_value = np.max(self.policy[state[0]][state[1]][state[2]][state[3]])
+		best_actions = np.where(self.policy[state[0]][state[1]][state[2]][state[3]] == max_value)[0]
+		best_action = np.random.choice(best_actions)
+		return best_action
 
 
 	def select_action(self, state):
 		sample = random.random()
 		
 		if sample > self.epsilon:
-			max_q = np.max(self.policy[state[0]][state[1]][state[2]][state[3]])
-			best_actions = np.where(self.policy[state[0]][state[1]][state[2]][state[3]] == max_q)[0]
+			max_value = np.max(self.policy[state[0]][state[1]][state[2]][state[3]])
+			best_actions = np.where(self.policy[state[0]][state[1]][state[2]][state[3]] == max_value)[0]
 			best_action = np.random.choice(best_actions)
 			return best_action
 		else:
