@@ -234,5 +234,5 @@ if __name__ == "__main__":
         print("Path already exists")
 
     agent = Agent(env, 12, learning_rate=0.001, batch_size=24)
-    agent.run(episodes, plot=True, max_steps=timelimit + 1, path=path)
-    agent.run(episodes, plot=True, max_steps=timelimit + 1, path=path, training=False)
+    agent.run(episodes, plot=False, max_steps=timelimit + 1, path=path)
+    agent.run(env.n_starts, plot=True, max_steps=timelimit + 1, path=path, training=False)

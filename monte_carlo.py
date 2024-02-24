@@ -22,7 +22,7 @@ class Agent():
 		
 		self.policy = np.full((self.env.height, self.env.width, 3, 3, self.n_actions), 1 / self.n_actions)
 		self.times_counted = np.zeros((self.env.height, self.env.width, 3, 3, self.n_actions))
-		self.q = np.full((self.env.height, self.env.width, 3, 3, self.n_actions), -self.max_steps, dtype=np.float32)
+		self.q = np.full((self.env.height, self.env.width, 3, 3, self.n_actions), -self.max_steps/2, dtype=np.float32)
 
 		self.steps = 0
 
@@ -154,6 +154,6 @@ if __name__ == "__main__":
 	except:  
 		print("Path already exists")    
 	agent = Agent(env, max_steps=timelimit + 1)
-	agent.run(episodes, plot=True, path=path)
-	agent.run(10, plot=True, path=path, training=False)
+	agent.run(episodes, plot=False, path=path)
+	agent.run(env.n_starts, plot=True, path=path, training=False)
 	plt.close()
