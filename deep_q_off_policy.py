@@ -19,7 +19,6 @@ from environment import Environment
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
-
 '''
 Store Transisitions for neural network optimization
 '''
@@ -260,6 +259,7 @@ class Agent():
         if (training):
             self.plot_rewards(show_result=True, path=os.path.join(path, "rewards.png"))
         plt.ioff()
+
 
 
 if __name__ == "__main__":

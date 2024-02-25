@@ -80,9 +80,11 @@ class Environment:
 	'''
 	Reseting environment
 
+	Parameter: startIndex - If provided, start index is not random, but this one is used
+
 	Returns:
-	observation: Current position as state
-	info: absolute speeds for x and y axis
+	observation	- Current position and speed as state
+	info		- absolute speeds for x and y axis
 	'''
 	def reset(self, startIndex=None) -> tuple[list[float], list[int]]:
 		self.reset_pos(startIndex)
@@ -94,6 +96,8 @@ class Environment:
 
 	'''
 	Print the grid with the path until this timestep
+
+	Parameter: path - If provided, plot is stored with this path and name
 	'''
 	def print(self, path=None) -> None:
 		print_grid = self.grid.copy()
@@ -112,8 +116,11 @@ class Environment:
 		else:
 			plt.show()	
 
+
 	'''
 	Reset position to random choice on starting line and speed to zero
+	
+	Parameter: startIndex - If provided, start index is not random, but this one is used
 	'''
 	def reset_pos(self, startIndex=None) -> None:
 		if startIndex != None:
@@ -155,6 +162,8 @@ class Environment:
 				
 		return True
 	
+	
+
 if __name__ == "__main__":
 	env = Environment('./grids/grid_simple.txt')
 	env.reset(1)
