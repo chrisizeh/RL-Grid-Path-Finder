@@ -9,8 +9,19 @@ import torch
 
 from environment import Environment
 
+'''
+Tabular Monte Carlo Learner
+'''
 class Agent():
 
+
+	'''
+	Parameter:
+		env             - Environment with OpenAI Gym Interface
+        epsilon         - Percentage of random action selection (Exploration)
+        gamma           - Reward Decay
+        max_steps   - max possible steps of the environment before truncating
+	'''
 	def __init__(self, env, epsilon=0.05, gamma=0.99, max_steps=1000) -> None:
 		self.env = env
 		self.n_actions = env.n_actions
@@ -27,6 +38,12 @@ class Agent():
 		self.steps = 0
 
 
+	'''
+    Select action from policy with epsilon degree of randomness. Ties broken randomly.
+
+    Parameter: state - current state to select action for
+    Returns: action as integer
+    '''
 	def select_action(self, state):
 		sample = random.random()
 		
@@ -38,7 +55,14 @@ class Agent():
 		else:
 			return np.random.randint(0, self.n_actions)
 		
-	
+
+	'''
+    Plot Reward over episodes with moving average over 100 episodes
+
+    Parameter:
+        show_results - If training is finished and results are final
+        path         - If provided plot is saved when show_results = True
+    '''
 	def plot_rewards(self, show_result=False, path=None):
 		plt.figure(1)
 		durations_t = torch.tensor(self.episode_rewards, dtype=torch.float)
@@ -67,6 +91,15 @@ class Agent():
 				display.display(plt.gcf())
  
 
+	'''
+    Run multiple episodes, training the agent or just applying the policy
+
+    Parameters:
+        episodes    - Number of episodes to run
+        plot        - If true, plot training progress or environment movement
+        path        - if provided plotted images are stored
+        training    - True if policy should be optimized, False optimization is ommited (epsilon=0)
+    '''
 	def run(self, episodes, plot=True, path=None, training=True):
 		plt.ion()
 		self.episode_rewards = []
@@ -135,6 +168,7 @@ class Agent():
 		plt.ioff()
 
 
+
 if __name__ == "__main__":
 	path = os.path.join("plots", "Monte_Carlo")
 
@@ -147,8 +181,8 @@ if __name__ == "__main__":
 	except:  
 		print("Path already exists")
 
-	episodes = 1000
-	timelimit = 2000
+	episodes = 10000
+	timelimit = 1000
 
 	env_text = "grid_simple"
 	env = Environment(f'./grids/{env_text}.txt', timelimit=timelimit)    
