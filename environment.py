@@ -119,7 +119,7 @@ class Environment:
 
 	'''
 	Reset position to random choice on starting line and speed to zero
-	
+
 	Parameter: startIndex - If provided, start index is not random, but this one is used
 	'''
 	def reset_pos(self, startIndex=None) -> None:
@@ -135,6 +135,8 @@ class Environment:
 
 	'''
 	Find a path with the defined x and y speed without obstacles on the grid
+
+	Returns: True, if movement was finished, False if border or obstacle was hit
 	'''
 	def move_one_step(self) -> bool:
 		y = self.speed[0]
