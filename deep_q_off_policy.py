@@ -19,6 +19,10 @@ from environment import Environment
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
+
+'''
+Store Transisitions for neural network optimization
+'''
 class ReplayMemory(object):
 
     def __init__(self, capacity):
@@ -35,8 +39,17 @@ class ReplayMemory(object):
         return len(self.memory)
 
 
+'''
+Create pytorch neural network
+'''
 class DQN(nn.Module):
 
+    '''
+    Parameter:
+        layer - list of node sizes to be used to build layer
+        activation - activation function to use for each layer
+        dropout - percentage of dropout to add between each layer
+    '''
     def __init__(self, layer, activation=nn.ReLU, dropout=0):
         super().__init__()
         self.flatten = nn.Flatten()
@@ -49,6 +62,10 @@ class DQN(nn.Module):
         return logits
     
 
+    '''
+    Build sequential list of layer by using each node from the layer list
+    [20, 40, 60, 2] -> (20, 40), (40, 60), (60, 2)
+    '''
     def create_model(self, layer, activation=nn.ReLU, dropout=0):
         layer_nn = []
         for i in range(len(layer) - 1):
@@ -61,18 +78,29 @@ class DQN(nn.Module):
         return nn.Sequential(*layer_nn)
 
 
+'''
+Deep-Q Learner for Environment with OpenAI Gym Interface
+'''
 class Agent():
 
-    def __init__(self, env, nodes, batch_size=128, gamma=0.7, epsilon_start=0.9, epsilon_end=0.05, epsilon_decay=2, update_rate=0.005, learning_rate=1e-3) -> None:
+    '''
+    Parameters:
+        env             - Environment with OpenAI Gym Interface
+        nodes           - Node size list to build neural network from
+        batch_size      - Number of transitions to use for optimization step
+        gamma           - Reward Decay
+        epsilon         - Percentage of random action selection (Exploration)
+        update_rate     - Learning rate from learning policy to target policy
+        learning_rate   - learning rate of learning policy
+    '''
+    def __init__(self, env, nodes, batch_size=128, gamma=0.7, epsilon=0.9, update_rate=0.005, learning_rate=1e-3):
         self.env = env
         self.n_actions = env.n_actions
         self.n_observations = env.n_states
 
         self.batch_size = batch_size
         self.gamma = gamma
-        self.epsilon_start = epsilon_start
-        self.epsilon_end = epsilon_end
-        self.epsilon_decay = epsilon_decay
+        self.epsilon = epsilon
         self.update_rate = update_rate
         self.learning_rate = learning_rate
 
@@ -86,15 +114,29 @@ class Agent():
 
         self.steps = 0
 
+
+    '''
+    Select action from learning policy with epsilon degree of randomness
+
+    Parameter: state - current state to select action for
+    Returns: action as integer
+    '''
     def select_action(self, state):
         sample = random.random()
-        if sample > self.curr_epsilon:
+        if sample > self.epsilon:
             with torch.no_grad():
                 return self.policy_net(state).max(1).indices.view(1, 1)
         else:
             return torch.tensor([[random.choice(range(self.n_actions))]], device=self.device, dtype=torch.long)
 
 
+    '''
+    Plot Reward over episodes with moving average over 100 episodes
+
+    Parameter:
+        show_results - If training is finished and results are final
+        path         - If provided plot is saved when show_results = True
+    '''
     def plot_rewards(self, show_result=False, path=None):
         plt.figure(1)
         durations_t = torch.tensor(self.episode_rewards, dtype=torch.float)
@@ -123,6 +165,9 @@ class Agent():
 
 
 
+    '''
+    Optimize neural network using adam optimizer and random transitions sampled from memory
+    '''
     def optimize_model(self) -> None:
         if len(self.memory) < self.batch_size:
             return
@@ -153,18 +198,24 @@ class Agent():
         self.optimizer.step()
 
 
+    '''
+    Run multiple episodes, training the agent or just applying the policy
+
+    Parameters:
+        episodes    - Number of episodes to run
+        plot        - If true, plot training progress or environment movement
+        max_steps   - max possible steps of the environment before truncating
+        path        - if provided plotted images are stored
+        training    - True if policy should be optimized, False optimization is ommited (epsilon=0)
+    '''
     def run(self, episodes, plot=True, max_steps = 1000, path=None, training=True):
         plt.ion()
         self.episode_rewards = []
-        # max_epsilon_step = episodes / self.epsilon_decay
 
         if (not training):
             self.epsilon = 0
 
         for i_episode in range(episodes):
-            self.curr_epsilon = self.epsilon_end
-            # self.curr_epsilon = self.epsilon_start - (self.epsilon_start - self.epsilon_end) * (min(i_episode, max_epsilon_step) / max_epsilon_step)
-
             rewards = np.zeros(max_steps)
             state, _ = self.env.reset(i_episode % self.env.n_starts)
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -223,7 +274,7 @@ if __name__ == "__main__":
     except:  
         print("Path already exists")
 
-    episodes = 500
+    episodes = 10000
     timelimit = 1000
 
     env_text = "grid_simple"
@@ -234,6 +285,6 @@ if __name__ == "__main__":
     except:  
         print("Path already exists")
 
-    agent = Agent(env, 12, learning_rate=0.001, batch_size=24)
+    agent = Agent(env, 64, learning_rate=0.001, batch_size=24)
     agent.run(episodes, plot=False, max_steps=timelimit + 1, path=path)
     agent.run(env.n_starts, plot=True, max_steps=timelimit + 1, path=path, training=False)
