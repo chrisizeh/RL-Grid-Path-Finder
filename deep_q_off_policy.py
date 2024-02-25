@@ -120,11 +120,14 @@ class Agent():
     Parameter: state - current state to select action for
     Returns: action as integer
     '''
-    def select_action(self, state):
+    def select_action(self, state, training=False):
         sample = random.random()
         if sample > self.epsilon:
             with torch.no_grad():
-                return self.policy_net(state).max(1).indices.view(1, 1)
+                if training:
+                    return self.policy_net(state).max(1).indices.view(1, 1)
+                else:
+                    return self.target_net(state).max(1).indices.view(1, 1)
         else:
             return torch.tensor([[random.choice(range(self.n_actions))]], device=self.device, dtype=torch.long)
 
@@ -211,8 +214,8 @@ class Agent():
         plt.ion()
         self.episode_rewards = []
 
-        if (not training):
-            self.epsilon = 0
+        # if (not training):
+        #     self.epsilon = 0
 
         for i_episode in range(episodes):
             rewards = np.zeros(max_steps)
@@ -220,7 +223,7 @@ class Agent():
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
             
             for t in count():
-                action = self.select_action(state)
+                action = self.select_action(state, training=training)
                 observation, reward, terminated, truncated, _ = self.env.step(action)
                 rewards[t] = reward
                 reward = torch.tensor([reward], device=self.device)
@@ -232,9 +235,9 @@ class Agent():
                     next_state = torch.tensor(observation, dtype=torch.float32, device=self.device).unsqueeze(0)
 
                 self.memory.push(state, action, next_state, reward)
+                state = next_state
 
                 if (training):
-                    state = next_state
                     self.optimize_model()
 
                     target_net_state_dict = self.target_net.state_dict()
@@ -274,7 +277,7 @@ if __name__ == "__main__":
     except:  
         print("Path already exists")
 
-    episodes = 10000
+    episodes = 5000
     timelimit = 1000
 
     env_text = "grid_simple"
